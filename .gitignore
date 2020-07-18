@@ -1,0 +1,10 @@
+# Don't track content of these folders
+Data/
+Executables/
+
+# Don't track Visual Studio created files
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.vs
