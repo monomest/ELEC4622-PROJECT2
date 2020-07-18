@@ -1,6 +1,12 @@
 # Don't track content of these folders
 Data/
 Executables/
+Project2/Task1/Debug
+Project2/Task2/Debug
+Project2/Task3/Debug
+Project2/Task4/Debug
+Project2/Task5/Debug
+Project2/Task6/Debug
 
 # Don't track Visual Studio created files
 *.sln

@@ -1,7 +1,7 @@
 /*****************************************************************************/
-// File: main3_final.cpp
+// File: main1.cpp
 // Author: David Taubman & Renee Lu
-// Last Revised: 9 July, 2020
+// Last Revised: 18 July, 2020
 /*****************************************************************************/
 // Copyright 2007, David Taubman, The University of New South Wales (UNSW)
 /*****************************************************************************/
@@ -60,7 +60,7 @@ void my_image_comp::perform_boundary_extension()
 /*                                apply_filter                               */
 /*---------------------------------------------------------------------------*/
 
-void apply_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inter, 
+void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inter, 
                   float sigma, int H, float alpha, int debug)
 {
 #define PI 3.1415926F
@@ -72,14 +72,13 @@ void apply_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inter,
     // Filter is initialised to 1
     int rows = FILTER_DIM; // height
     int cols = FILTER_DIM; // width
-    // Create filter values
+    // Create filter values using Laplacian of Gaussian PSF equation
     vector<vector<float>> mirror_psf(rows, vector<float>(cols, 1));
     for (int row_index = -H; row_index <= H; row_index ++)
         for (int col_index = -H; col_index <= H; col_index++)
         {
-            mirror_psf[H + row_index][H + col_index] = ((row_index * row_index + col_index * col_index) /
-                    (sigma * sigma) - 2) * exp(-(row_index * row_index + col_index * col_index) /
-                    (2 * sigma * sigma)) / (2 * PI * pow(sigma, 4));
+            mirror_psf[H + row_index][H + col_index] = (-2 * sigma * sigma + row_index * row_index + col_index * col_index) /
+                (2 * PI * sigma * sigma * exp((row_index * row_index + col_index * col_index) / 2 * sigma * sigma));
         }
 
     /* Debugging filter */
@@ -138,7 +137,7 @@ main(int argc, char* argv[])
             throw err_code;
         // Get input and input border dimensions
         int width = in.cols, height = in.rows;  
-        int n, num_comps = in.num_components;   // number of colour components
+        int n, num_comps = in.num_components;   // Number of colour components
         // Initialise the input storage
         my_image_comp* input_comps = new my_image_comp[num_comps];
         for (n = 0; n < num_comps; n++)
@@ -179,7 +178,7 @@ main(int argc, char* argv[])
         
         // Process the image, all in floating point (easy)
         for (n = 0; n < num_comps; n++)
-            apply_filter(input_comps + n, output_comps + n, output_comps + n, sigma, H, alpha, debug);
+            apply_LOG_filter(input_comps + n, output_comps + n, output_comps + n, sigma, H, alpha, debug);
 
         /*-------------------------------------------------------------------------*/
 
