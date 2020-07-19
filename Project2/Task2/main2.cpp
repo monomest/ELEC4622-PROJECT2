@@ -60,54 +60,54 @@ void my_image_comp::perform_boundary_extension()
 /*                                apply_filter                               */
 /*---------------------------------------------------------------------------*/
 
-void apply_LOG_filter(my_image_comp* in, my_image_comp* out,
+void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inter_1,
+    my_image_comp* inter_2, my_image_comp* y1, my_image_comp* y2,
     float sigma, int H, float alpha, int debug)
 {
 #define PI 3.1415926F
-#define FILTER_DIM (2*H + 1)
-#define FILTER_TAPS (FILTER_DIM*FILTER_DIM)
+#define FILTER_TAPS (2*H+1)
 
-    /* Create filter vector 'mirror_psf' of size FILTER_SIZE * FILTER_SIZE */
-    // Origin of filter is at position mirror_psf[H][H]
-    // Filter is initialised to 1
-    int rows = FILTER_DIM; // height
-    int cols = FILTER_DIM; // width
-    // Create filter values using Laplacian of Gaussian PSF equation
-    vector<vector<float>> mirror_psf(rows, vector<float>(cols, 1));
-    for (int row_index = -H; row_index <= H; row_index++)
-        for (int col_index = -H; col_index <= H; col_index++)
-        {
-            mirror_psf[H + row_index][H + col_index] = (-2 * sigma * sigma + row_index * row_index + col_index * col_index) /
-                (2 * PI * sigma * sigma * exp((row_index * row_index + col_index * col_index) / 2 * sigma * sigma));
-        }
+    /* Decompose Laplacian of Gaussian filter into 4 filters */
+    // Origin of filters is at position filter[H]
+    // Filters are initialised to 1
+    vector<float> h_11(FILTER_TAPS, 1); // Partial of s1 -> s1 component
+    vector<float> h_12(FILTER_TAPS, 1); // Partial of s1 -> s2 component
+    vector<float> h_21(FILTER_TAPS, 1); // Partial of s2 -> s1 component
+    vector<float> h_22(FILTER_TAPS, 1); // Partial of s2 -> s2 component
+    for (int location = -H; location <= H; location++)
+    {
+        h_11[H + location] = (-location * location + sigma * sigma) /
+            (2 * PI * pow(sigma, 6) * exp((location * location) / (2 * sigma * sigma)));
+        h_12[H + location] = exp(-(location * location) / (2 * sigma * sigma));
+        h_21[H + location] = exp(-(location * location) / (2 * sigma * sigma));
+        h_22[H + location] = (-location * location + sigma * sigma) /
+            (2 * PI * pow(sigma, 6) * exp((location * location) / (2 * sigma * sigma)));
+
+    }
 
     /* Debugging filter */
     if (debug)
     {
-        printf("Checking the filters vector...\n");
-        for (int i = 0; i < mirror_psf.size(); i++)
-        {
-            for (int j = 0; j < mirror_psf[i].size(); j++)
-                printf("%f   ", mirror_psf[i][j]);
-            printf("\n");
-        }
+        printf("Checking the h_11 vector...\n");
+        for (int i = 0; i < h_11.size(); i++)
+            printf("%f   ", h_11[i]);
+        printf("\n");
+        printf("Checking the h_12 vector...\n");
+        for (int i = 0; i < h_12.size(); i++)
+            printf("%f   ", h_12[i]);
+        printf("\n");
+        printf("Checking the h_21 vector...\n");
+        for (int i = 0; i < h_21.size(); i++)
+            printf("%f   ", h_21[i]);
+        printf("\n");
+        printf("Checking the h_22 vector...\n");
+        for (int i = 0; i < h_22.size(); i++)
+            printf("%f   ", h_22[i]);
+        printf("\n");
     }
 
     /* Check that input has enough boundary extension for filtering */
     assert(in->border >= H);
-
-    // Perform the convolution
-    for (int r = 0; r < out->height; r++)
-        for (int c = 0; c < out->width; c++)
-        {
-            float* ip = in->buf + r * in->stride + c;
-            float* op = out->buf + r * out->stride + c;
-            float sum = 0.0F;
-            for (int row_index = -H; row_index <= H; row_index++)
-                for (int col_index = -H; col_index <= H; col_index++)
-                    sum += ip[row_index * in->stride + col_index] * mirror_psf[H + row_index][H + col_index];
-            *op = (sum * alpha) + 128;    // Output = filtered output scaled by alpha + 128
-        }
 
 }
 
@@ -162,51 +162,60 @@ main(int argc, char* argv[])
         }
         bmp_in__close(&in);
 
-        /*------------------------------- TASK 1 -------------------------------*/
-        int debug = 0;
+        /*------------------------------- TASK 2 -------------------------------*/
+        int debug = 1;
 
         // Symmetric extension for input
         for (n = 0; n < num_comps; n++)
             input_comps[n].perform_boundary_extension();
 
-        // Allocate storage for the filtered output
-        my_image_comp* output_comps = new my_image_comp[num_comps];
+        // Allocate storage for the filtered outputs
+        my_image_comp* output_comps = new my_image_comp[num_comps];  // output = y1 + y2
+        my_image_comp* inter_1_comps = new my_image_comp[num_comps]; // intermediate y1   
+        my_image_comp* inter_2_comps = new my_image_comp[num_comps]; // intermediate y2
+        my_image_comp* y1_comps = new my_image_comp[num_comps];      // Partial of s1
+        my_image_comp* y2_comps = new my_image_comp[num_comps];      // Partial of s2
         for (n = 0; n < num_comps; n++)
         {
             output_comps[n].init(height, width, 0);
+            inter_1_comps[n].init(height, width, H);
+            inter_2_comps[n].init(height, width, H);
+            y1_comps[n].init(height, width, 0);
+            y2_comps[n].init(height, width, 0);
         }
 
         // Process the image, all in floating point (easy)
         for (n = 0; n < num_comps; n++)
-            apply_LOG_filter(input_comps + n, output_comps + n, sigma, H, alpha, debug);
+            apply_LOG_filter(input_comps + n, output_comps + n, inter_1_comps + n, 
+                inter_2_comps + n, y1_comps + n, y2_comps + n, sigma, H, alpha, debug);
 
         /*-------------------------------------------------------------------------*/
 
-       // Write the image back out again
-        bmp_out out;
-        if ((err_code = bmp_out__open(&out, argv[2], width, height, num_comps)) != 0)
-            throw err_code;
-        for (r = height - 1; r >= 0; r--)
-        { // "r" holds the true row index we are writing, since the image is
-          // written upside down in BMP files.
-            for (n = 0; n < num_comps; n++)
-            {
-                io_byte* dst = line + n; // Points to first sample of component n
-                float* src = output_comps[n].buf + r * output_comps[n].stride;
-                for (int c = 0; c < width; c++, dst += num_comps)
-                {
-                    // Deal with overflow and underflow
-                    if (src[c] > 255)
-                        src[c] = 255;
-                    else if (src[c] < 0)
-                        src[c] = 0;
-                    // Write output to destination
-                    *dst = (io_byte)src[c];
-                }
-            }
-            bmp_out__put_line(&out, line);
-        }
-        bmp_out__close(&out);
+       //// Write the image back out again
+       // bmp_out out;
+       // if ((err_code = bmp_out__open(&out, argv[2], width, height, num_comps)) != 0)
+       //     throw err_code;
+       // for (r = height - 1; r >= 0; r--)
+       // { // "r" holds the true row index we are writing, since the image is
+       //   // written upside down in BMP files.
+       //     for (n = 0; n < num_comps; n++)
+       //     {
+       //         io_byte* dst = line + n; // Points to first sample of component n
+       //         float* src = output_comps[n].buf + r * output_comps[n].stride;
+       //         for (int c = 0; c < width; c++, dst += num_comps)
+       //         {
+       //             // Deal with overflow and underflow
+       //             if (src[c] > 255)
+       //                 src[c] = 255;
+       //             else if (src[c] < 0)
+       //                 src[c] = 0;
+       //             // Write output to destination
+       //             *dst = (io_byte)src[c];
+       //         }
+       //     }
+       //     bmp_out__put_line(&out, line);
+       // }
+       // bmp_out__close(&out);
         delete[] line;
         delete[] input_comps;
         delete[] output_comps;
