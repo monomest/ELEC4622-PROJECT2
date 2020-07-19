@@ -13,6 +13,7 @@
 #include <vector>
 #include <iostream> 
 #include <cstdlib>
+#include <time.h>
 
 using namespace std;
 
@@ -106,9 +107,73 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
         printf("\n");
     }
 
-    /* Check that input has enough boundary extension for filtering */
+    /* Check that inputs have enough boundary extension for filtering */
     assert(in->border >= H);
+    assert(inter_1->border >= H);
+    assert(inter_2->border >= H);
 
+    /* Perform the separable convolution */
+
+    // Horizontal Convolution inter_1 = x * h_11
+    for (int r = 0; r < out->height; r++)
+        for (int c = 0; c < out->width; c++)
+        {
+            float* ip = in->buf + r * in->stride + c;
+            float* op = inter_1->buf + r * inter_1->stride + c;
+            float sum = 0.0F;
+            for (int filter_spot = -H; filter_spot <= H; filter_spot++)
+                sum += ip[filter_spot] * h_11[H+filter_spot];
+            *op = sum;
+        }
+    // Symmetrically extend inter_1
+    inter_1->perform_boundary_extension();
+    // Vertical (Stripe) Convolution y1 = (x * h_11) * h_12
+    for (int r = 0; r < out->height; r++)
+        for (int c = 0; c < out->width; c++)
+        {
+            float* ip = inter_1->buf + r * inter_1->stride + c;
+            float* op = y1->buf + r * y1->stride + c;
+            float sum = 0.0F;
+            for (int filter_spot = -H; filter_spot <= H; filter_spot++)
+                sum += ip[filter_spot * inter_1->stride] * h_12[H + filter_spot];
+            *op = sum;
+        }
+
+    // Horizontal Convolution inter_2 = x * h_21
+    for (int r = 0; r < out->height; r++)
+        for (int c = 0; c < out->width; c++)
+        {
+            float* ip = in->buf + r * in->stride + c;
+            float* op = inter_2->buf + r * inter_2->stride + c;
+            float sum = 0.0F;
+            for (int filter_spot = -H; filter_spot <= H; filter_spot++)
+                sum += ip[filter_spot] * h_21[H + filter_spot];
+            *op = sum;
+        }
+    // Symmetrically extend inter_2
+    inter_2->perform_boundary_extension();
+    // Vertical (Stripe) Convolution y2 = (x * h_21) * h_22
+    for (int r = 0; r < out->height; r++)
+        for (int c = 0; c < out->width; c++)
+        {
+            float* ip = inter_2->buf + r * inter_2->stride + c;
+            float* op = y2->buf + r * y2->stride + c;
+            float sum = 0.0F;
+            for (int filter_spot = -H; filter_spot <= H; filter_spot++)
+                sum += ip[filter_spot * inter_2->stride] * h_22[H + filter_spot];
+            *op = sum;
+        }
+
+    // Sum y1 + y2
+    for (int r = 0; r < out->height; r++)
+        for (int c = 0; c < out->width; c++)
+        {
+            float* y1_p = y1->buf + r * y1->stride + c;
+            float* y2_p = y2->buf + r * y2->stride + c;
+            float* op = out->buf + r * out->stride + c;
+            float sum = y1_p[0] + y2_p[0];
+            *op = (sum * alpha) + 128;
+        }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -117,7 +182,7 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
 
 int
 main(int argc, char* argv[])
-{
+{    
     /* Get the args */
     if (argc != 5)
     {
@@ -163,7 +228,7 @@ main(int argc, char* argv[])
         bmp_in__close(&in);
 
         /*------------------------------- TASK 2 -------------------------------*/
-        int debug = 1;
+        int debug = 0;
 
         // Symmetric extension for input
         for (n = 0; n < num_comps; n++)
@@ -189,33 +254,33 @@ main(int argc, char* argv[])
             apply_LOG_filter(input_comps + n, output_comps + n, inter_1_comps + n, 
                 inter_2_comps + n, y1_comps + n, y2_comps + n, sigma, H, alpha, debug);
 
-        /*-------------------------------------------------------------------------*/
+        /*----------------------------------------------------------------------*/
 
-       //// Write the image back out again
-       // bmp_out out;
-       // if ((err_code = bmp_out__open(&out, argv[2], width, height, num_comps)) != 0)
-       //     throw err_code;
-       // for (r = height - 1; r >= 0; r--)
-       // { // "r" holds the true row index we are writing, since the image is
-       //   // written upside down in BMP files.
-       //     for (n = 0; n < num_comps; n++)
-       //     {
-       //         io_byte* dst = line + n; // Points to first sample of component n
-       //         float* src = output_comps[n].buf + r * output_comps[n].stride;
-       //         for (int c = 0; c < width; c++, dst += num_comps)
-       //         {
-       //             // Deal with overflow and underflow
-       //             if (src[c] > 255)
-       //                 src[c] = 255;
-       //             else if (src[c] < 0)
-       //                 src[c] = 0;
-       //             // Write output to destination
-       //             *dst = (io_byte)src[c];
-       //         }
-       //     }
-       //     bmp_out__put_line(&out, line);
-       // }
-       // bmp_out__close(&out);
+       // Write the image back out again
+        bmp_out out;
+        if ((err_code = bmp_out__open(&out, argv[2], width, height, num_comps)) != 0)
+            throw err_code;
+        for (r = height - 1; r >= 0; r--)
+        { // "r" holds the true row index we are writing, since the image is
+          // written upside down in BMP files.
+            for (n = 0; n < num_comps; n++)
+            {
+                io_byte* dst = line + n; // Points to first sample of component n
+                float* src = output_comps[n].buf + r * output_comps[n].stride;
+                for (int c = 0; c < width; c++, dst += num_comps)
+                {
+                    // Deal with overflow and underflow
+                    if (src[c] > 255)
+                        src[c] = 255;
+                    else if (src[c] < 0)
+                        src[c] = 0;
+                    // Write output to destination
+                    *dst = (io_byte)src[c];
+                }
+            }
+            bmp_out__put_line(&out, line);
+        }
+        bmp_out__close(&out);
         delete[] line;
         delete[] input_comps;
         delete[] output_comps;
