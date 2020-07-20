@@ -1,0 +1,20 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(453,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+  io_bmp.cpp
+  main3.cpp
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(93,27): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(97,27): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(101,27): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(105,27): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(195,21): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(196,21): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(197,17): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(198,11): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(199,17): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(202,30): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(214,27): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\main3.cpp(220,11): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 87 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Task3.vcxproj -> C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task3\..\..\Executables\Task3.exe

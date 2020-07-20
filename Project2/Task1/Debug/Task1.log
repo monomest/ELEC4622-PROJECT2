@@ -5,6 +5,4 @@ C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task1
 C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task1\main1.cpp(128,17): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task1\main1.cpp(129,17): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
 C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task1\main1.cpp(130,11): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task1\main1.cpp(187,45): warning C4244: '=': conversion from 'double' to 'clock_t', possible loss of data
-C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task1\main1.cpp(188,16): warning C4477: 'printf' : format string '%f' requires an argument of type 'double', but variadic argument 1 has type 'clock_t'
   Task1.vcxproj -> C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task1\..\..\Executables\Task1.exe
