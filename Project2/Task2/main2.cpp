@@ -77,11 +77,11 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
     vector<float> h_22(FILTER_TAPS, 1); // Partial of s2 -> s2 component
     for (int location = -H; location <= H; location++)
     {
-        h_11[H + location] = (-location * location + sigma * sigma) /
+        h_11[H + location] = (location * location - sigma * sigma) /
             (2 * PI * pow(sigma, 6) * exp((location * location) / (2 * sigma * sigma)));
         h_12[H + location] = exp(-(location * location) / (2 * sigma * sigma));
         h_21[H + location] = exp(-(location * location) / (2 * sigma * sigma));
-        h_22[H + location] = (-location * location + sigma * sigma) /
+        h_22[H + location] = (location * location - sigma * sigma) /
             (2 * PI * pow(sigma, 6) * exp((location * location) / (2 * sigma * sigma)));
 
     }

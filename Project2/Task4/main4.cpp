@@ -13,8 +13,7 @@
 #include <vector>
 #include <iostream> 
 #include <cstdlib>
-#include <algorithm>
-#include <sstream>
+#include <time.h>
 
 using namespace std;
 
@@ -78,11 +77,11 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
     vector<float> h_22(FILTER_TAPS, 1); // Partial of s2 -> s2 component
     for (int location = -H; location <= H; location++)
     {
-        h_11[H + location] = (location * location - sigma * sigma) /
+        h_11[H + location] = (-location * location + sigma * sigma) /
             (2 * PI * pow(sigma, 6) * exp((location * location) / (2 * sigma * sigma)));
         h_12[H + location] = exp(-(location * location) / (2 * sigma * sigma));
         h_21[H + location] = exp(-(location * location) / (2 * sigma * sigma));
-        h_22[H + location] = (location * location - sigma * sigma) /
+        h_22[H + location] = (-location * location + sigma * sigma) /
             (2 * PI * pow(sigma, 6) * exp((location * location) / (2 * sigma * sigma)));
 
     }
@@ -178,122 +177,21 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
 }
 
 /*---------------------------------------------------------------------------*/
-/*                          create_output_sequence                           */
-/*---------------------------------------------------------------------------*/
-void create_output_sequence(my_image_comp* in, int num_comps, const char* out_file,
-    float sigma, int H, float alpha, int debug, int sigma_index)
-{
-    io_byte* line = new io_byte[in->width * num_comps];
-    // Allocate storage for the filtered outputs
-    my_image_comp* output_comps = new my_image_comp[num_comps];  // output = y1 + y2
-    my_image_comp* inter_1_comps = new my_image_comp[num_comps]; // intermediate y1   
-    my_image_comp* inter_2_comps = new my_image_comp[num_comps]; // intermediate y2
-    my_image_comp* y1_comps = new my_image_comp[num_comps];      // Partial of s1
-    my_image_comp* y2_comps = new my_image_comp[num_comps];      // Partial of s2
-    for (int n = 0; n < num_comps; n++)
-    {
-        output_comps[n].init(in->height, in->width, 0);
-        inter_1_comps[n].init(in->height, in->width, H);
-        inter_2_comps[n].init(in->height, in->width, H);
-        y1_comps[n].init(in->height, in->width, 0);
-        y2_comps[n].init(in->height, in->width, 0);
-    }
-
-    // Process the image, all in floating point (easy)
-    for (int n = 0; n < num_comps; n++)
-        apply_LOG_filter(in + n, output_comps + n, inter_1_comps + n,
-            inter_2_comps + n, y1_comps + n, y2_comps + n, sigma, H, alpha, debug);
-
-   // Create the output file name as a const char
-    ostringstream oss;
-    oss << out_file << "out_3_" << sigma_index << "_" << sigma << ".bmp";
-    string oss_s = oss.str();
-    char* p = &oss_s[0];
-    const char* output_name = p;
-
-    // Write the image back out again
-    bmp_out out;
-    int err_code = 0;
-    if ((err_code = bmp_out__open(&out, output_name, in->width, in->height, num_comps)) != 0)
-        throw err_code;
-    for (int r = in->height - 1; r >= 0; r--)
-    { // "r" holds the true row index we are writing, since the image is
-      // written upside down in BMP files.
-        for (int n = 0; n < num_comps; n++)
-        {
-            io_byte* dst = line + n; // Points to first sample of component n
-            float* src = output_comps[n].buf + r * output_comps[n].stride;
-            for (int c = 0; c < in->width; c++, dst += num_comps)
-            {
-                // Deal with overflow and underflow
-                if (src[c] > 255)
-                    src[c] = 255;
-                else if (src[c] < 0)
-                    src[c] = 0;
-                // Write output to destination
-                *dst = (io_byte)src[c];
-            }
-        }
-        bmp_out__put_line(&out, line);
-    }
-    bmp_out__close(&out);
-    delete[] line;
-    delete[] output_comps;
-    delete[] inter_1_comps;
-    delete[] inter_2_comps;
-    delete[] y1_comps;
-    delete[] y2_comps;
-}
-/*---------------------------------------------------------------------------*/
 /*                                    main                                   */
 /*---------------------------------------------------------------------------*/
 
 int
 main(int argc, char* argv[])
 {
-#define E 2.7182818
-    int debug = 1;
     /* Get the args */
-    if (argc != 7)
+    if (argc != 5)
     {
-        fprintf(stderr, "Usage: %s <input bmp file> <output folder> <min> <max> <alpha> <N>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <input bmp file> <output bmp file> <sigma> <alpha>\n", argv[0]);
         return -1;
     }
-    float sigma_min = atof(argv[3]);
-    float sigma_max = atof(argv[4]);
-    float alpha = atoi(argv[5]);    // Scaling factor alpha
-    int N = atof(argv[6]);          // Number of scales
-
-    /* Find the logspace of sigmas */
-    float delta = (log(sigma_max) - log(sigma_min)) / (N - 1);
-    vector<float> sigma_list(N, 0);
-    for (int i = 0; i < N; i++)
-    {
-        float exponent = log(sigma_min) + delta * i;
-        sigma_list[i] = pow(E, exponent);
-    }
-    if (debug)
-    {
-        printf("Checking sigma_list \n");
-        for (int i = 0; i < sigma_list.size(); i++)
-            printf("%f ", sigma_list[i]);
-        printf("\n");
-    }
-
-    /* Find the extents H of each sigma filter */
-    vector<int> H_list(N, 0);
-    for (int i = 0; i < N; i++)
-    {
-        H_list[i] = (int)ceil(3 * sigma_list[i]);
-    }
-    if (debug)
-    {
-        printf("Checking H_list \n");
-        for (int i = 0; i < H_list.size(); i++)
-            printf("%d ", H_list[i]);
-        printf("\n");
-    }
-    int H_max = *max_element(H_list.begin(), H_list.end());
+    float sigma = atof(argv[3]);    // Determines LoG filter co-efficients
+    float alpha = atoi(argv[4]);    // Scaling factor alpha
+    int H = ceil(3 * sigma);        // Extent of filter, for Nyquist Bandlimited
 
     /* Create the input image storage */
     int err_code = 0;
@@ -308,7 +206,7 @@ main(int argc, char* argv[])
         // Initialise the input storage
         my_image_comp* input_comps = new my_image_comp[num_comps];
         for (n = 0; n < num_comps; n++)
-            input_comps[n].init(height, width, H_max); // Leave a border of H_max
+            input_comps[n].init(height, width, H); // Leave a border of H
 
         int r; // Declare row index
         io_byte* line = new io_byte[width * num_comps];
@@ -330,18 +228,62 @@ main(int argc, char* argv[])
         bmp_in__close(&in);
 
         /*------------------------------- TASK 2 -------------------------------*/
+        int debug = 0;
 
         // Symmetric extension for input
         for (n = 0; n < num_comps; n++)
             input_comps[n].perform_boundary_extension();
 
-        // Iterate through sigma_list and create output sequence
-        for (int sigma_index = 0; sigma_index < sigma_list.size(); sigma_index++)
+        // Allocate storage for the filtered outputs
+        my_image_comp* output_comps = new my_image_comp[num_comps];  // output = y1 + y2
+        my_image_comp* inter_1_comps = new my_image_comp[num_comps]; // intermediate y1   
+        my_image_comp* inter_2_comps = new my_image_comp[num_comps]; // intermediate y2
+        my_image_comp* y1_comps = new my_image_comp[num_comps];      // Partial of s1
+        my_image_comp* y2_comps = new my_image_comp[num_comps];      // Partial of s2
+        for (n = 0; n < num_comps; n++)
         {
-            create_output_sequence(input_comps, num_comps, argv[2], sigma_list[sigma_index], 
-                H_list[sigma_index], alpha, debug, sigma_index);
+            output_comps[n].init(height, width, 0);
+            inter_1_comps[n].init(height, width, H);
+            inter_2_comps[n].init(height, width, H);
+            y1_comps[n].init(height, width, 0);
+            y2_comps[n].init(height, width, 0);
         }
-        /*---------------------------------------------------------------------*/
+
+        // Process the image, all in floating point (easy)
+        for (n = 0; n < num_comps; n++)
+            apply_LOG_filter(input_comps + n, output_comps + n, inter_1_comps + n,
+                inter_2_comps + n, y1_comps + n, y2_comps + n, sigma, H, alpha, debug);
+
+        /*----------------------------------------------------------------------*/
+
+       // Write the image back out again
+        bmp_out out;
+        if ((err_code = bmp_out__open(&out, argv[2], width, height, num_comps)) != 0)
+            throw err_code;
+        for (r = height - 1; r >= 0; r--)
+        { // "r" holds the true row index we are writing, since the image is
+          // written upside down in BMP files.
+            for (n = 0; n < num_comps; n++)
+            {
+                io_byte* dst = line + n; // Points to first sample of component n
+                float* src = output_comps[n].buf + r * output_comps[n].stride;
+                for (int c = 0; c < width; c++, dst += num_comps)
+                {
+                    // Deal with overflow and underflow
+                    if (src[c] > 255)
+                        src[c] = 255;
+                    else if (src[c] < 0)
+                        src[c] = 0;
+                    // Write output to destination
+                    *dst = (io_byte)src[c];
+                }
+            }
+            bmp_out__put_line(&out, line);
+        }
+        bmp_out__close(&out);
+        delete[] line;
+        delete[] input_comps;
+        delete[] output_comps;
     }
     catch (int exc) {
         if (exc == IO_ERR_NO_FILE)
