@@ -62,7 +62,7 @@ void my_image_comp::perform_boundary_extension()
 /*---------------------------------------------------------------------------*/
 
 void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inter_1,
-    my_image_comp* inter_2, my_image_comp* y1, my_image_comp* y2,
+    my_image_comp* inter_2, my_image_comp* y1, my_image_comp* y2, my_image_comp* edge_comps,
     float sigma, int H, float alpha, int debug)
 {
 #define PI 3.1415926F
@@ -77,11 +77,11 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
     vector<float> h_22(FILTER_TAPS, 1); // Partial of s2 -> s2 component
     for (int location = -H; location <= H; location++)
     {
-        h_11[H + location] = (-location * location + sigma * sigma) /
+        h_11[H + location] = (location * location - sigma * sigma) /
             (2 * PI * pow(sigma, 6) * exp((location * location) / (2 * sigma * sigma)));
         h_12[H + location] = exp(-(location * location) / (2 * sigma * sigma));
         h_21[H + location] = exp(-(location * location) / (2 * sigma * sigma));
-        h_22[H + location] = (-location * location + sigma * sigma) /
+        h_22[H + location] = (location * location - sigma * sigma) /
             (2 * PI * pow(sigma, 6) * exp((location * location) / (2 * sigma * sigma)));
 
     }
@@ -111,6 +111,7 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
     assert(in->border >= H);
     assert(inter_1->border >= H);
     assert(inter_2->border >= H);
+    assert(edge_comps->border >= 1);
 
     /* Perform the separable convolution */
 
@@ -122,7 +123,7 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
             float* op = inter_1->buf + r * inter_1->stride + c;
             float sum = 0.0F;
             for (int filter_spot = -H; filter_spot <= H; filter_spot++)
-                sum += ip[filter_spot] * h_11[H + filter_spot];
+                sum += ip[filter_spot] * h_11[H+filter_spot];
             *op = sum;
         }
     // Symmetrically extend inter_1
@@ -170,10 +171,41 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
         {
             float* y1_p = y1->buf + r * y1->stride + c;
             float* y2_p = y2->buf + r * y2->stride + c;
-            float* op = out->buf + r * out->stride + c;
+            float* op = edge_comps->buf + r * edge_comps->stride + c;
             float sum = y1_p[0] + y2_p[0];
-            *op = (sum * alpha) + 128;
+            *op = sum*alpha;    // Output is centred around zero
         }
+    // Symmetrically extend the image used for edge detection
+    edge_comps->perform_boundary_extension();
+
+    /* Edge Detection - Zero Crossing Locator */
+    for (int r = 0; r < out->height; r++)
+    {
+        for (int c = 0; c < out->width; c++)
+        {
+            float* ip = edge_comps->buf + r * edge_comps->stride + c;
+            float* op = out->buf + r * out->stride + c;
+            if (ip[0] > 0)  // Only consider positive values to avoid thick edges
+            {
+                float horizontal = ip[-1] * ip[1];
+                float vertical = ip[-1 * edge_comps->stride] * ip[1 * edge_comps->stride];
+                float diagonal_NE = ip[1 * edge_comps->stride + 1] * ip[-1 * edge_comps->stride - 1];
+                float diagonal_SE = ip[1 * edge_comps->stride - 1] * ip[-1 * edge_comps->stride + 1];
+                if (horizontal < 0) // There is a sign change of product is negative
+                    *op = 255;
+                else if (vertical < 0)
+                    *op = 255;
+                else if (diagonal_NE < 0)
+                    *op = 255;
+                else if (diagonal_SE < 0)
+                    *op = 255;
+                else
+                    *op = 0;
+            }
+            else
+                *op = 0;
+        }
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -182,7 +214,7 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
 
 int
 main(int argc, char* argv[])
-{
+{    
     /* Get the args */
     if (argc != 5)
     {
@@ -227,7 +259,8 @@ main(int argc, char* argv[])
         }
         bmp_in__close(&in);
 
-        /*------------------------------- TASK 2 -------------------------------*/
+        /*------------------------------- TASK 4 -------------------------------*/
+        
         int debug = 0;
 
         // Symmetric extension for input
@@ -240,6 +273,7 @@ main(int argc, char* argv[])
         my_image_comp* inter_2_comps = new my_image_comp[num_comps]; // intermediate y2
         my_image_comp* y1_comps = new my_image_comp[num_comps];      // Partial of s1
         my_image_comp* y2_comps = new my_image_comp[num_comps];      // Partial of s2
+        my_image_comp* edge_comps = new my_image_comp[num_comps];    // For edge detection storage
         for (n = 0; n < num_comps; n++)
         {
             output_comps[n].init(height, width, 0);
@@ -247,12 +281,13 @@ main(int argc, char* argv[])
             inter_2_comps[n].init(height, width, H);
             y1_comps[n].init(height, width, 0);
             y2_comps[n].init(height, width, 0);
+            edge_comps[n].init(height, width, 1);   // Leave a border of 1 for zero crossing detection
         }
 
         // Process the image, all in floating point (easy)
         for (n = 0; n < num_comps; n++)
-            apply_LOG_filter(input_comps + n, output_comps + n, inter_1_comps + n,
-                inter_2_comps + n, y1_comps + n, y2_comps + n, sigma, H, alpha, debug);
+            apply_LOG_filter(input_comps + n, output_comps + n, inter_1_comps + n, 
+                inter_2_comps + n, y1_comps + n, y2_comps + n, edge_comps + n, sigma, H, alpha, debug);
 
         /*----------------------------------------------------------------------*/
 
@@ -284,6 +319,11 @@ main(int argc, char* argv[])
         delete[] line;
         delete[] input_comps;
         delete[] output_comps;
+        delete[] inter_1_comps;
+        delete[] inter_2_comps;
+        delete[] y1_comps;
+        delete[] y2_comps;
+        delete[] edge_comps;
     }
     catch (int exc) {
         if (exc == IO_ERR_NO_FILE)
