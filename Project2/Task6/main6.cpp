@@ -244,7 +244,7 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
         // because morphological dilation increases the area
     for (int r = 0; r < morph_comps->height; r++)
     {
-        for (int c = 0; c < morph_comps->height; c++)
+        for (int c = 0; c < morph_comps->width; c++)
         {
             float* ip = morph_comps->buf + r * morph_comps->stride + c;
             float* op = out->buf + r * out->stride + c;
