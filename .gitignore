@@ -7,6 +7,12 @@ Project2/Task3/Debug
 Project2/Task4/Debug
 Project2/Task5/Debug
 Project2/Task6/Debug
+Project2/Task1/Release
+Project2/Task2/Release
+Project2/Task3/Release
+Project2/Task4/Release
+Project2/Task5/Release
+Project2/Task6/Release
 
 # Don't track Visual Studio created files
 *.sln
