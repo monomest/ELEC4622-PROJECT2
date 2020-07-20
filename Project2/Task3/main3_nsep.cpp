@@ -79,8 +79,8 @@
 //    for (int row_index = -H; row_index <= H; row_index++)
 //        for (int col_index = -H; col_index <= H; col_index++)
 //        {
-//            mirror_psf[H + row_index][H + col_index] = (-2 * sigma * sigma + row_index * row_index + col_index * col_index) /
-//                (2 * PI * sigma * sigma * exp((row_index * row_index + col_index * col_index) / 2 * sigma * sigma));
+//            mirror_psf[H + row_index][H + col_index] = ((row_index * row_index + col_index * col_index - 2 * sigma * sigma) /
+//                (2 * PI * pow(sigma, 6))) * exp(-(row_index * row_index + col_index * col_index) / (2 * sigma * sigma));
 //        }
 //
 //    /* Debugging filter */
