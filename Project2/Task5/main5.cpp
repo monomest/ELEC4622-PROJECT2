@@ -115,14 +115,16 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
         A_h12 += abs(h_12_f[i]);
         A_h21 += abs(h_21_f[i]);
         A_h22 += abs(h_22_f[i]);
-    }
-    float A = A_h11 * A_h12 + A_h21 * A_h22;    // Overall BIBO gain of filter
+    }    
+    float A = 0;    // Overall BIBO gain
+    for (int row = -H; row <= H; row++)
+        for (int col = -H; col <= H; col++)
+            A += abs(h_11_f[col+H] * h_12_f[row+H] - h_21_f[col+H] * h_22_f[row+H]);
 
     /* Find K for integer processing */
-    // A = < a . 2^K >
-    int int_bits = 16;   // 16 bit integer
-    int K = floor(log(pow(2, int_bits) / A) / log(2));
-
+    // 32 bits = 8 bits + K bits + log2(A) bits
+    int K = 32 - 8 - log2(A); 
+   
     /* Take 128 away from the input for integer processing */
     // Use signed integers for full dynamic range
     for (int r = 0; r < in->height; r++)

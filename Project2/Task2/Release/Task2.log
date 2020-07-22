@@ -1,5 +1,4 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(453,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-  io_bmp.cpp
   main2.cpp
 C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task2\main2.cpp(93,27): warning C4018: '<': signed/unsigned mismatch
 C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task2\main2.cpp(97,27): warning C4018: '<': signed/unsigned mismatch
@@ -9,7 +8,7 @@ C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task2
 C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task2\main2.cpp(196,17): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
 C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task2\main2.cpp(197,11): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
   Generating code
-  2 of 86 functions ( 2.3%) were compiled, the rest were copied from previous compilation.
+  1 of 86 functions ( 1.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
