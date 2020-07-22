@@ -1,2 +1,0 @@
-C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Executables\Task2.exe.lastcodeanalysissucceeded
-C:\Users\rslaj\Documents\01_University\2020\T2\ELEC4622\Project_2\Project2\Task2\Release\NativeCodeAnalysis.read.1.tlog

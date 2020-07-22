@@ -1,7 +1,7 @@
 /*****************************************************************************/
-// File: main1.cpp
+// File: main3_sep.cpp
 // Author: David Taubman & Renee Lu
-// Last Revised: 18 July, 2020
+// Last Revised: 22 July, 2020
 /*****************************************************************************/
 // Copyright 2007, David Taubman, The University of New South Wales (UNSW)
 /*****************************************************************************/
@@ -180,6 +180,7 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
 /*---------------------------------------------------------------------------*/
 /*                          create_output_sequence                           */
 /*---------------------------------------------------------------------------*/
+
 void create_output_sequence(my_image_comp* in, int num_comps, const char* out_file,
     float sigma, int H, float alpha, int debug, int sigma_index)
 {
@@ -252,7 +253,7 @@ int
 main(int argc, char* argv[])
 {
 #define E 2.7182818
-    int debug = 1;
+    int debug = 0;
     /* Get the args */
     if (argc != 7)
     {

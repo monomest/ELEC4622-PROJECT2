@@ -1,7 +1,7 @@
 /*****************************************************************************/
 // File: main1.cpp
 // Author: David Taubman & Renee Lu
-// Last Revised: 18 July, 2020
+// Last Revised: 22 July, 2020
 /*****************************************************************************/
 // Copyright 2007, David Taubman, The University of New South Wales (UNSW)
 /*****************************************************************************/
@@ -78,8 +78,11 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out,
     for (int row_index = -H; row_index <= H; row_index++)
         for (int col_index = -H; col_index <= H; col_index++)
         {
-            mirror_psf[H + row_index][H + col_index] = ((row_index * row_index + col_index * col_index - 2 * sigma * sigma) /
-                (2 * PI * pow(sigma, 6))) * exp(-(row_index * row_index + col_index * col_index) / (2 * sigma * sigma));
+            mirror_psf[H + row_index][H + col_index] = 
+                ((row_index * row_index + col_index * col_index - 2 * sigma * sigma) /
+                (2 * PI * pow(sigma, 6))) * 
+                exp(-(row_index * row_index + col_index * col_index) / 
+                (2 * sigma * sigma));
         }
 
     /* Debugging filter */
@@ -106,8 +109,9 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out,
             float sum = 0.0F;
             for (int row_index = -H; row_index <= H; row_index++)
                 for (int col_index = -H; col_index <= H; col_index++)
-                    sum += ip[row_index * in->stride + col_index] * mirror_psf[H + row_index][H + col_index];
-            *op = (sum * alpha) + 128;    // Output = filtered output scaled by alpha + 128
+                    sum += ip[row_index * in->stride + col_index] * 
+                    mirror_psf[H + row_index][H + col_index];
+            *op = (sum * alpha) + 128;  // Output = filtered output scaled by alpha + 128
         }
 
 }
@@ -119,6 +123,9 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out,
 int
 main(int argc, char* argv[])
 {
+    /* Start the timer */
+    clock_t time = clock();
+
     /* Get the args */
     if (argc != 5)
     {
@@ -226,5 +233,8 @@ main(int argc, char* argv[])
             fprintf(stderr, "Trying to access a file which is not open!(?)\n");
         return -1;
     }
+    /* End the timer */
+    time = clock() - time;
+    printf("This inefficient program took %f seconds.\n", ((float)time) / CLOCKS_PER_SEC);
     return 0;
 }

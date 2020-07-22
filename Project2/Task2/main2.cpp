@@ -1,7 +1,7 @@
 /*****************************************************************************/
-// File: main1.cpp
+// File: main2.cpp
 // Author: David Taubman & Renee Lu
-// Last Revised: 18 July, 2020
+// Last Revised: 22 July, 2020
 /*****************************************************************************/
 // Copyright 2007, David Taubman, The University of New South Wales (UNSW)
 /*****************************************************************************/
@@ -115,8 +115,8 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
     /* Perform the separable convolution */
 
     // Horizontal Convolution inter_1 = x * h_11
-    for (int r = 0; r < out->height; r++)
-        for (int c = 0; c < out->width; c++)
+    for (int r = 0; r < in->height; r++)
+        for (int c = 0; c < in->width; c++)
         {
             float* ip = in->buf + r * in->stride + c;
             float* op = inter_1->buf + r * inter_1->stride + c;
@@ -128,8 +128,8 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
     // Symmetrically extend inter_1
     inter_1->perform_boundary_extension();
     // Vertical (Stripe) Convolution y1 = (x * h_11) * h_12
-    for (int r = 0; r < out->height; r++)
-        for (int c = 0; c < out->width; c++)
+    for (int r = 0; r < inter_1->height; r++)
+        for (int c = 0; c < inter_1->width; c++)
         {
             float* ip = inter_1->buf + r * inter_1->stride + c;
             float* op = y1->buf + r * y1->stride + c;
@@ -140,8 +140,8 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
         }
 
     // Horizontal Convolution inter_2 = x * h_21
-    for (int r = 0; r < out->height; r++)
-        for (int c = 0; c < out->width; c++)
+    for (int r = 0; r < in->height; r++)
+        for (int c = 0; c < in->width; c++)
         {
             float* ip = in->buf + r * in->stride + c;
             float* op = inter_2->buf + r * inter_2->stride + c;
@@ -153,8 +153,8 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
     // Symmetrically extend inter_2
     inter_2->perform_boundary_extension();
     // Vertical (Stripe) Convolution y2 = (x * h_21) * h_22
-    for (int r = 0; r < out->height; r++)
-        for (int c = 0; c < out->width; c++)
+    for (int r = 0; r < inter_2->height; r++)
+        for (int c = 0; c < inter_2->width; c++)
         {
             float* ip = inter_2->buf + r * inter_2->stride + c;
             float* op = y2->buf + r * y2->stride + c;
@@ -182,7 +182,10 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
 
 int
 main(int argc, char* argv[])
-{    
+{  
+    /* Start the timer */
+    clock_t time = clock();
+
     /* Get the args */
     if (argc != 5)
     {
@@ -299,5 +302,8 @@ main(int argc, char* argv[])
             fprintf(stderr, "Trying to access a file which is not open!(?)\n");
         return -1;
     }
+    /* End the timer */
+    time = clock() - time;
+    printf("This separable convolution program took %f seconds.\n", ((float)time) / CLOCKS_PER_SEC);
     return 0;
 }

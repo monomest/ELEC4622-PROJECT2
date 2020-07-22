@@ -1,7 +1,7 @@
 /*****************************************************************************/
-// File: main1.cpp
+// File: main5.cpp
 // Author: David Taubman & Renee Lu
-// Last Revised: 18 July, 2020
+// Last Revised: 22 July, 2020
 /*****************************************************************************/
 // Copyright 2007, David Taubman, The University of New South Wales (UNSW)
 /*****************************************************************************/
@@ -149,6 +149,7 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
     /* Debug integer filters */
     if (debug)
     {
+        printf("BIBO %f K %d\n", A, K);
         printf("h_11 integers K = %d A = %f\n", K, A_h11);
         for (int i = 0; i < FILTER_TAPS; i++) {
             printf("%d ", h_11[i]);
