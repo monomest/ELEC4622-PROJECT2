@@ -185,7 +185,7 @@ void apply_LOG_filter(my_image_comp* in, my_image_comp* out, my_image_comp* inte
         {
             float* ip = edge_comps->buf + r * edge_comps->stride + c;
             float* op = out->buf + r * out->stride + c;
-            if (ip[0] > 0)  // Only consider positive values to avoid thick edges
+            if (ip[0] >= 0)  // Only consider positive values to avoid thick edges (remember to take into account zero values)
             {
                 float horizontal = ip[-1] * ip[1];
                 float vertical = ip[-1 * edge_comps->stride] * ip[1 * edge_comps->stride];
